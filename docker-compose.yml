@@ -1,0 +1,61 @@
+services:
+  # Database Service: MySQL 8.0
+  db:
+    image: mysql:8.0
+    container_name: lineage_mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    # Ensures MySQL is actually ready to accept connections before Django starts
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${DB_PASSWORD}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lineage-network
+
+  # Backend Service: Django + Graphene (GraphQL)
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    container_name: lineage_django
+    # Mounts local code for "Hot Reloading" during development
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    # Waiting for a healthy DB
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - lineage-network
+
+# Persistence for your family data even if containers are deleted
+volumes:
+  mysql_data:
+
+# Isolated network for high-performance service communication
+networks:
+  lineage-network:
+    driver: bridge
