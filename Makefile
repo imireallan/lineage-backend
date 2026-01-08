@@ -34,8 +34,7 @@ freeze:
 # --- Docker Orchestration ---
 # Starts containers and immediately attaches to logs
 up:
-	$(DOCKER_COMPOSE) up -d
-	$(DOCKER_COMPOSE) logs -f $(APP_SERVICE)
+	$(DOCKER_COMPOSE) up
 
 down:
 	$(DOCKER_COMPOSE) down
@@ -57,6 +56,9 @@ migrate:
 
 shell:
 	$(DOCKER_COMPOSE) exec $(APP_SERVICE) python manage.py shell
+
+superuser:
+	$(DOCKER_COMPOSE) exec $(APP_SERVICE) python manage.py createsuperuser
 
 # --- Utility ---
 clean:
